@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div id="vuebox" align="center" class="container">
+        <table class="table table-bordered" style="text-align: center">
+            <tr>
+                <td colspan="5" style="font-size: 30px;">帖子列表</td>
+            </tr>
+            <tr>
+                <td colspan="5">标题:<input type="text" v-model="title" /><button type="button" @click="queryinv()">搜索</button></td>
+            </tr>
+            <tr>
+                <td>标题</td>
+                <td>内容摘要</td>
+                <td>作者</td>
+                <td>发布时间</td>
+                <td>操作</td>
+            </tr>
+            <tr v-for="(item,index) in invlist.pageinfo">
+                <td width="130">{{item.title}}</td>
+                <td width="500">{{item.summary}}</td>
+                <td width="90">{{item.author}}</td>
+                <td width="90">{{item.createdate}}</td>
+                <td width="90"><a href="javascript:void(0)" @click="querydetail(item.id)">查看回复</a> <a href="javascript:void(0)" @click="del(item.id)">删除</a></td>
+            </tr>
+        </table>
+        <div align="center">
+            <ul class="pagination pagination-sm" v-show="invlist.pageinfo!=null">
+                <!--上一页-->
+                <li :class="{disabled: !invlist.hasPrePage}">
+                    <a href="javascript:void(0)" v-if="invlist.hasPrePage" @click="inpage(invlist.prePage)">&laquo;</a>
+                    <a href="javascript:void(0)" v-else >&laquo;</a>
+                </li>
+                <!--页数跳转-->
+                <li v-for="i in invlist.navigatepageNums" :class="{active :i==pageNum}">
+                    <a href="javascript:void(0)" @click="inpage(i)">{{i}}</a>
+                </li>
+                <!--下一页-->
+                <li :class="{disabled: !invlist.hasNextPage}">
+                    <a href="javascript:void(0)" v-if="invlist.hasNextPage" @click="inpage(invlist.nextPage)">&raquo;</a>
+                    <a href="javascript:void(0)" v-else>&raquo;</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+<script type="text/javascript">
+    var vm=new Vue({
+        el:"#vuebox",
+        data:{
+            title:null,
+            pageNum:1,
+            pageSize:3,
+            invlist:[]
+        },
+        mounted(){
+            this.queryinv();
+        },
+        watch:{
+        },
+        methods:{
+            //列表
+            queryinv:function(){
+                axios({url:"/inv/list", method:"get",
+                    params:{title:this.title,pageNum:this.pageNum,pageSize:this.pageSize}})
+                    .then(res=> {
+                        this.invlist = res.data;
+                        console.log(this.invlist);
+                });
+            },
+            //删除
+            del:function (id) {
+                if(confirm("确定要删除该帖子及下的回复吗？")){
+                    axios({url:"/inv/del", method:"post",
+                        params:{id:id}})
+                        .then(res=> {
+                            if(res.data==1){
+                                alert("删除成功!");
+                                this.queryinv();
+                                this.title=null;
+                            }else{
+                                alert("删除失败，请联系管理员!");
+                            }
+                        });
+                }
+            },
+            querydetail:function (invid) {
+                axios({url:"/inv/id", method:"post",
+                    params:{invid:invid}})
+                    .then(res=> {
+                        window.location.href="detail.html";
+                    });
+            },
+            inpage:function (num) {
+                this.pageNum=num;
+                this.queryinv();
+            }
+
+        }
+    });
+</script>
